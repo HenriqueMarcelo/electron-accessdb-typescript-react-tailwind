@@ -1,6 +1,33 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
+const ADODB = require('node-adodb');
+
+
+
+if (app.isPackaged) {
+  ADODB.PATH = "./resources/adodb.js";
+}
+
+const connection = ADODB.open(
+  'Provider=Microsoft.Jet.OLEDB.4.0;' +
+  'Data Source=C:\\MGMobile\\Gestor\\Gestor.mdb;'
+);
+
+async function executeSQL(sql: string) {
+  try {
+    // Verifica se é um SELECT
+    if (/^\s*select/i.test(sql)) {
+      return await connection.query(sql);
+    } else {
+      // Para DELETE, UPDATE, INSERT, etc.
+      return await connection.execute(sql);
+    }
+  } catch (err) {
+    console.error('Erro ao executar SQL:', sql, err);
+    throw err;
+  }
+}
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -29,6 +56,18 @@ const createWindow = () => {
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
 };
+
+
+// Define IPC handlers
+ipcMain.handle('executeSQL', async (_event, sql: string) => {
+  try {
+    const result = await executeSQL(sql);
+    return result;
+  } catch (err) {
+    console.error('Erro ao processar IPC executeSQL:', err);
+    throw err;
+  }
+});
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.

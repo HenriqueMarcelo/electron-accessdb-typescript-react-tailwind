@@ -28,6 +28,7 @@
 
 import './index.css';
 
-console.log(
-  '👋 This message is being logged by "renderer.ts", included via Vite',
-);
+(async () => {
+  const mensagem = await window.executeSQL('SELECT * FROM Clientes');
+  console.log('Resposta do main process:', mensagem);
+})();
