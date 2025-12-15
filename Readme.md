@@ -1,9 +1,10 @@
 # Electron AccessDB Typescript React Tailwind
 
-- [ ] Electron
+- [x] Electron
 - [ ] AccessDB
-- [ ] TypeScript
+- [x] TypeScript
 - [ ] ReactJS
 - [ ] Tailwind
 
 ## All commands
+- `npx create-electron-app@latest electron-accessdb-typescript-react-tailwind --template=vite-typescript`
