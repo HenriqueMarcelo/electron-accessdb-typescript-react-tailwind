@@ -8,4 +8,3 @@
 
 ## All commands
 - `npx create-electron-app@latest electron-accessdb-typescript-react-tailwind --template=vite-typescript`
-- `npm i node-adodb`

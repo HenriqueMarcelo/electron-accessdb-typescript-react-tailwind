@@ -1,33 +1,8 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
+import fs from 'node:fs';
 import started from 'electron-squirrel-startup';
-const ADODB = require('node-adodb');
-
-
-
-if (app.isPackaged) {
-  ADODB.PATH = "./resources/adodb.js";
-}
-
-const connection = ADODB.open(
-  'Provider=Microsoft.Jet.OLEDB.4.0;' +
-  'Data Source=C:\\MGMobile\\Gestor\\Gestor.mdb;'
-);
-
-async function executeSQL(sql: string) {
-  try {
-    // Verifica se é um SELECT
-    if (/^\s*select/i.test(sql)) {
-      return await connection.query(sql);
-    } else {
-      // Para DELETE, UPDATE, INSERT, etc.
-      return await connection.execute(sql);
-    }
-  } catch (err) {
-    console.error('Erro ao executar SQL:', sql, err);
-    throw err;
-  }
-}
+const { execFile } = require('child_process');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -57,16 +32,38 @@ const createWindow = () => {
   mainWindow.webContents.openDevTools();
 };
 
+ipcMain.handle('executeSQL', async (_event, sql) => {
+  return new Promise((resolve, reject) => {
+    const packagedCandidates = [
+      path.join(process.resourcesPath, 'bin', 'MDBQueryVemovel.exe'),
+      path.join(process.resourcesPath, 'MDBQueryVemovel.exe'),
+    ];
 
-// Define IPC handlers
-ipcMain.handle('executeSQL', async (_event, sql: string) => {
-  try {
-    const result = await executeSQL(sql);
-    return result;
-  } catch (err) {
-    console.error('Erro ao processar IPC executeSQL:', err);
-    throw err;
-  }
+    const devCandidates = [
+      path.join(app.getAppPath(), 'MDBQueryVemovel.exe'),
+      path.join(app.getAppPath(), 'bin', 'MDBQueryVemovel.exe'),
+    ];
+
+    const candidates = app.isPackaged ? packagedCandidates : devCandidates;
+    const exePath = candidates.find((p) => fs.existsSync(p));
+
+    if (!exePath) {
+      return reject(`Executável não encontrado. Procurado em: ${candidates.join(', ')}`);
+    }
+
+    execFile(exePath, [sql], { windowsHide: true, maxBuffer: 1024 * 1024 * 100 }, (error: any, stdout: any, stderr: any) => {
+      if (error) {
+        return reject(stderr || error.message);
+      }
+
+      try {
+        const json = JSON.parse(stdout);
+        resolve(json);
+      } catch (e) {
+        reject('Erro ao converter retorno para JSON');
+      }
+    });
+  });
 });
 
 // This method will be called when Electron has finished

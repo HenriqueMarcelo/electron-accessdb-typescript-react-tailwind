@@ -10,8 +10,7 @@ import { FuseV1Options, FuseVersion } from '@electron/fuses';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    // https://stackoverflow.com/questions/78221515/db-using-node-adodb-on-an-electron-app-working-fine-in-dev-but-not-on-build
-    extraResource: ["node_modules/node-adodb/lib/adodb.js"], //where adodb.js is located in your app directory
+    extraResource: ["bin"],
   },
   rebuildConfig: {},
   makers: [
